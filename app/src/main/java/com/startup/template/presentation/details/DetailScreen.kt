@@ -10,13 +10,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun DetailsScreen(
+    parameter: String,
     viewModel: DetailScreenViewModel = hiltViewModel()
 ) {
     Scaffold {
         Column(
             modifier = Modifier.padding(it)
         ) {
-            Text("Details Screen")
+            Text("Details Screen $parameter")
         }
     }
 }

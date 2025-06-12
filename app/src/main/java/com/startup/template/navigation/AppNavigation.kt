@@ -10,8 +10,6 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.startup.template.presentation.details.DetailsScreen
 import com.startup.template.presentation.home.HomeScreen
-import com.startup.template.navigation.NavScreen.DetailsRoute
-import com.startup.template.navigation.NavScreen.HomeRoute
 
 
 @Composable
@@ -30,12 +28,14 @@ fun AppNavigation() {
             entry<HomeRoute> {
                 HomeScreen(
                     onNavigateToDetails = {
-                        backStack.add(DetailsRoute)
+                        backStack.add(DetailsRoute("Testing parameter"))
                     }
                 )
             }
             entry<DetailsRoute> {
-                DetailsScreen()
+                DetailsScreen(
+                    parameter = it.parameter
+                )
             }
         }
     )

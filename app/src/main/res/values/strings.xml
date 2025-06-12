@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Jetpack-Startup Template</string>
+    <string name="error_forbidden">Forbidden: You do not have permission to access this resource.</string>
+    <string name="error_unauthorized">Unauthorized: Please check your authentication credentials.</string>
+    <string name="error_internal_server">Internal Server Error: Something went wrong on the server side.</string>
+    <string name="error_unknown">Unknown Error: Please try again later.</string>
+    <string name="error_no_internet">No Internet please check your network connection.</string>
+    <string name="error_no_data">Sorry API returned no data.</string>
+</resources>

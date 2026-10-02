@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.startup.template"
+    namespace = "com.superapp.app"
     compileSdk = 36
 
     defaultConfig {

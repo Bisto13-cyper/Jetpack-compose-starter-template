@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Jetpack-Startup Template</string>
+    <string name="app_name">Bisto App</string>
     <string name="error_forbidden">Forbidden: You do not have permission to access this resource.</string>
     <string name="error_unauthorized">Unauthorized: Please check your authentication credentials.</string>
     <string name="error_internal_server">Internal Server Error: Something went wrong on the server side.</string>

@@ -43,7 +43,8 @@ val appFeatures: List<FeatureModule> = listOf(
     ComingSoonFeature("favorites", "Favorites", "⭐", Color(0xFFFB7185)),
     ComingSoonFeature("clock", "Clock", "⏰", Color(0xFFF97316)),
     ComingSoonFeature("markdown", "Markdown", "📝", Color(0xFF2DD4BF)),
-    ComingSoonFeature("keyboard", "Keyboard", "⌨️", Color(0xFFE879F9))
+    ComingSoonFeature("keyboard", "Keyboard", "⌨️", Color(0xFFE879F9)),
+    ComingSoonFeature("passwords", "Passwords Storage", "🗝️", Color(0xFF333333)
 )
 
 /**

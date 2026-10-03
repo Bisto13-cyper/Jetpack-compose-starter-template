@@ -52,7 +52,7 @@ import com.superapp.app.features.settings.SettingsScreen
  * HOW TO CHANGE:
  *  - Background image visibility: change alpha = 0.35f in BackgroundImage
  *  - Space reserved under the side button: change 60.dp
- *  - Settings screen: replace SettingsComingSoon when the real one exists
+ *  - Settings screen: see features/settings/ (SettingsMenu.kt is the menu)
  */
 class MainActivity : ComponentActivity() {
 
@@ -99,10 +99,8 @@ fun AppRoot(
                 )
 
                 Routes.SETTINGS -> ScreenFrame {
-			SettingsScreen(env = remember {
-			SettingsEnv(repository,registry)			
-})
-                    }
+                    SettingsScreen(env = remember { SettingsEnv(repository, registry) })
+                }
 
                 else -> {
                     val feature = registry.find(route)
@@ -172,4 +170,3 @@ private fun loadScaledBitmap(path: String, maxSide: Int = 1440): ImageBitmap? {
         BitmapFactory.decodeFile(path, options)?.asImageBitmap()
     }.getOrNull()
 }
-l

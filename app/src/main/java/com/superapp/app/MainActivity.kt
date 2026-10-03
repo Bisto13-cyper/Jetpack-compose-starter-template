@@ -33,6 +33,8 @@ import com.superapp.app.core.settings.SettingsRepository
 import com.superapp.app.core.theme.AppTheme
 import com.superapp.app.core.ui.SideMenuButton
 import com.superapp.app.features.home.HomeScreen
+import com.superapp.app.features.settings.SettingsEnv
+import com.superapp.app.features.settings.SettingsScreen
 
 /**
  * FILE 9 - The entry point. It connects everything:
@@ -50,7 +52,7 @@ import com.superapp.app.features.home.HomeScreen
  * HOW TO CHANGE:
  *  - Background image visibility: change alpha = 0.35f in BackgroundImage
  *  - Space reserved under the side button: change 60.dp
- *  - Settings screen: replace SettingsComingSoon() when the real one exists
+ *  - Settings screen: replace SettingsComingSoon when the real one exists
  */
 class MainActivity : ComponentActivity() {
 
@@ -97,8 +99,10 @@ fun AppRoot(
                 )
 
                 Routes.SETTINGS -> ScreenFrame {
-                    SettingsComingSoon()
-                }
+			SettingsScreen(env = remember {
+			SettingsEnv(repository,registry)			
+})
+                    }
 
                 else -> {
                     val feature = registry.find(route)
@@ -138,16 +142,7 @@ private fun ScreenFrame(content: @Composable () -> Unit) {
     }
 }
 
-/** Temporary. Replaced by the real Settings dashboard in a later file. */
-@Composable
-private fun SettingsComingSoon() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            text = "Settings dashboard - coming soon",
-            color = MaterialTheme.colorScheme.onBackground
-        )
-    }
-}
+
 
 /** Draws the user's background image faintly behind everything. */
 @Composable
@@ -177,3 +172,4 @@ private fun loadScaledBitmap(path: String, maxSide: Int = 1440): ImageBitmap? {
         BitmapFactory.decodeFile(path, options)?.asImageBitmap()
     }.getOrNull()
 }
+l

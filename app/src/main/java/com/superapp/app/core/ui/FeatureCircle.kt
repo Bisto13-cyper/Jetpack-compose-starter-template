@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superapp.app.core.feature.FeatureIcon
+import com.superapp.app.core.theme.LocalThemeSettings
 
 /**
  * FILE 6 - One glowing circle with its name underneath.
@@ -42,8 +43,7 @@ import com.superapp.app.core.feature.FeatureIcon
  *
  * HOW TO CHANGE THE LOOK:
  *  - Ring thickness  : change 3.dp in .border(...)
- *  - Glow strength   : change 0.35f in the drawBehind block
- *  - Glow size       : change 0.85f in the drawBehind block
+ *  - Glow strength, size and color : Settings > Appearance > Glow
  *  - Name text size  : change 12.sp
  *  - Icon size       : change the 0.4f / 0.45f / 0.5f factors in IconContent
  *
@@ -60,6 +60,13 @@ fun FeatureCircle(
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
+    val settings = LocalThemeSettings.current
+
+    // Glow comes from Settings > Appearance > Glow.
+    // One color for all circles, or each circle's own color.
+    val glowColor = settings.glowColor?.let { Color(it) } ?: accent
+    val glowStrength = settings.glowStrength
+    val glowSize = settings.glowSize
 
     Column(
         modifier = modifier.width(diameter + 24.dp),
@@ -69,16 +76,21 @@ fun FeatureCircle(
             modifier = Modifier
                 .size(diameter)
                 .drawBehind {
-                    val glowRadius = this.size.minDimension * 0.85f
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(accent.copy(alpha = 0.35f), Color.Transparent),
-                            center = center,
-                            radius = glowRadius
-                        ),
-                        radius = glowRadius,
-                        center = center
-                    )
+                    if (glowStrength > 0f) {
+                        val glowRadius = this.size.minDimension * glowSize
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    glowColor.copy(alpha = glowStrength.coerceIn(0f, 1f)),
+                                    Color.Transparent
+                                ),
+                                center = center,
+                                radius = glowRadius
+                            ),
+                            radius = glowRadius,
+                            center = center
+                        )
+                    }
                 }
                 .clip(CircleShape)
                 .background(colors.surface)

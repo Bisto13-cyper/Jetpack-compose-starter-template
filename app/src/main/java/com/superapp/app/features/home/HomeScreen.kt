@@ -1,5 +1,10 @@
 package com.superapp.app.features.home
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,11 +33,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superapp.app.core.feature.FeatureIcon
 import com.superapp.app.core.feature.FeatureModule
 import com.superapp.app.core.settings.FeatureStyle
+import com.superapp.app.core.theme.LineStyle
 import com.superapp.app.core.theme.LocalThemeSettings
 import com.superapp.app.core.ui.FeatureCircle
 import kotlin.math.cos
@@ -54,7 +64,7 @@ import kotlin.math.sin
  * HOW TO CHANGE THE LOOK:
  *  - Circle size     : change 76.dp (also scaled by the Settings circle size)
  *  - Center size     : change 96.dp
- *  - Line color/width: change the alpha 0.25f / 1.5.dp in the Canvas
+ *  - Line color, width, style: Settings > Appearance > Connection Lines
  *  - Ring spacing    : change the 0.85f / 0.75f (one ring) and 0.62f / 0.55f (inner ring)
  */
 @Composable
@@ -93,18 +103,68 @@ fun HomeScreen(
                 val points = remember(visible.size, rx, ry) {
                     layoutPoints(visible.size, rx, ry)
                 }
-                val lineColor = colors.primary.copy(alpha = 0.25f)
+                // Line look comes from Settings > Appearance > Connection Lines.
+                val baseLineColor = settings.lineColor?.let { Color(it) } ?: colors.primary
+                val lineColor = baseLineColor.copy(alpha = settings.lineAlpha.coerceIn(0f, 1f))
+                val lineWidthDp = settings.lineWidth
+
+                // PULSE style only: a value that loops from 0 to 1 again and again.
+                // It is read while drawing, so only the lines redraw, not the screen.
+                val pulsePhase: State<Float>? =
+                    if (settings.lineStyle == LineStyle.PULSE) {
+                        rememberInfiniteTransition(label = "linePulse").animateFloat(
+                            initialValue = 0f,
+                            targetValue = 1f,
+                            animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing)),
+                            label = "linePulseValue"
+                        )
+                    } else {
+                        null
+                    }
 
                 // Lines from the center to every circle.
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val c = Offset(size.width / 2f, size.height / 2f)
-                    points.forEach { (dx, dy) ->
-                        drawLine(
-                            color = lineColor,
-                            start = c,
-                            end = Offset(c.x + dx.dp.toPx(), c.y + dy.dp.toPx()),
-                            strokeWidth = 1.5.dp.toPx()
-                        )
+                    val stroke = lineWidthDp.dp.toPx()
+
+                    points.forEachIndexed { index, (dx, dy) ->
+                        val end = Offset(c.x + dx.dp.toPx(), c.y + dy.dp.toPx())
+
+                        if (settings.lineStyle == LineStyle.CURVED) {
+                            // Bend the line sideways with a control point off the middle.
+                            val midX = (c.x + end.x) / 2f
+                            val midY = (c.y + end.y) / 2f
+                            val bendX = -(end.y - c.y) * 0.18f
+                            val bendY = (end.x - c.x) * 0.18f
+                            val path = Path().apply {
+                                moveTo(c.x, c.y)
+                                quadraticBezierTo(midX + bendX, midY + bendY, end.x, end.y)
+                            }
+                            drawPath(
+                                path = path,
+                                color = lineColor,
+                                style = Stroke(width = stroke, cap = StrokeCap.Round)
+                            )
+                        } else {
+                            drawLine(
+                                color = lineColor,
+                                start = c,
+                                end = end,
+                                strokeWidth = stroke,
+                                cap = StrokeCap.Round
+                            )
+                        }
+
+                        // A small light travelling along the line (PULSE only).
+                        val phase = pulsePhase?.value
+                        if (phase != null) {
+                            val t = (phase + index * 0.17f) % 1f
+                            drawCircle(
+                                color = baseLineColor.copy(alpha = 0.9f),
+                                radius = stroke * 2.2f,
+                                center = Offset(c.x + (end.x - c.x) * t, c.y + (end.y - c.y) * t)
+                            )
+                        }
                     }
                 }
 

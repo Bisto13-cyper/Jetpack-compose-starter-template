@@ -1,6 +1,7 @@
 package com.superapp.app.core.settings
 
 import android.content.Context
+import com.superapp.app.core.theme.LineStyle
 import com.superapp.app.core.theme.ThemeSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,6 +58,16 @@ class SettingsRepository(context: Context) {
             .putInt(K_ON_BACKGROUND, updated.onBackground)
             .putString(K_BG_IMAGE, updated.backgroundImagePath)
             .putFloat(K_CIRCLE_SCALE, updated.circleScale)
+            .putFloat(K_GLOW_STRENGTH, updated.glowStrength)
+            .putFloat(K_GLOW_SIZE, updated.glowSize)
+            .putString(K_LINE_STYLE, updated.lineStyle.name)
+            .putFloat(K_LINE_WIDTH, updated.lineWidth)
+            .putFloat(K_LINE_ALPHA, updated.lineAlpha)
+            .also { editor ->
+                // null means "use the default behavior", so the key is removed.
+                putOptionalInt(editor, K_GLOW_COLOR, updated.glowColor)
+                putOptionalInt(editor, K_LINE_COLOR, updated.lineColor)
+            }
             .apply()
     }
 
@@ -98,8 +109,24 @@ class SettingsRepository(context: Context) {
             primary = prefs.getInt(K_PRIMARY, d.primary),
             onBackground = prefs.getInt(K_ON_BACKGROUND, d.onBackground),
             backgroundImagePath = prefs.getString(K_BG_IMAGE, null),
-            circleScale = prefs.getFloat(K_CIRCLE_SCALE, d.circleScale)
+            circleScale = prefs.getFloat(K_CIRCLE_SCALE, d.circleScale),
+            glowStrength = prefs.getFloat(K_GLOW_STRENGTH, d.glowStrength),
+            glowSize = prefs.getFloat(K_GLOW_SIZE, d.glowSize),
+            glowColor = getOptionalInt(K_GLOW_COLOR),
+            lineStyle = runCatching {
+                LineStyle.valueOf(prefs.getString(K_LINE_STYLE, d.lineStyle.name) ?: d.lineStyle.name)
+            }.getOrDefault(d.lineStyle),
+            lineColor = getOptionalInt(K_LINE_COLOR),
+            lineWidth = prefs.getFloat(K_LINE_WIDTH, d.lineWidth),
+            lineAlpha = prefs.getFloat(K_LINE_ALPHA, d.lineAlpha)
         )
+    }
+
+    private fun getOptionalInt(key: String): Int? =
+        if (prefs.contains(key)) prefs.getInt(key, 0) else null
+
+    private fun putOptionalInt(editor: android.content.SharedPreferences.Editor, key: String, value: Int?) {
+        if (value != null) editor.putInt(key, value) else editor.remove(key)
     }
 
     private fun loadFeatureStyles(): Map<String, FeatureStyle> {
@@ -123,6 +150,13 @@ class SettingsRepository(context: Context) {
         const val K_ON_BACKGROUND = "theme_on_background"
         const val K_BG_IMAGE = "theme_bg_image"
         const val K_CIRCLE_SCALE = "theme_circle_scale"
+        const val K_GLOW_STRENGTH = "theme_glow_strength"
+        const val K_GLOW_SIZE = "theme_glow_size"
+        const val K_GLOW_COLOR = "theme_glow_color"
+        const val K_LINE_STYLE = "theme_line_style"
+        const val K_LINE_COLOR = "theme_line_color"
+        const val K_LINE_WIDTH = "theme_line_width"
+        const val K_LINE_ALPHA = "theme_line_alpha"
         const val K_STYLED_IDS = "styled_feature_ids"
     }
 }

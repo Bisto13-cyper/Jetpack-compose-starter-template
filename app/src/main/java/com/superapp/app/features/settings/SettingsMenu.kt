@@ -3,6 +3,10 @@ package com.superapp.app.features.settings
 import androidx.compose.runtime.Composable
 import com.superapp.app.core.feature.FeatureRegistry
 import com.superapp.app.core.settings.SettingsRepository
+import com.superapp.app.features.settings.appearance.ColorsPage
+import com.superapp.app.features.settings.appearance.FavoritesPage
+import com.superapp.app.features.settings.appearance.GlowPage
+import com.superapp.app.features.settings.appearance.LinesPage
 
 /**
  * SETTINGS FILE 1 - The whole Settings menu, as data.
@@ -60,7 +64,11 @@ val settingsTree: List<SettingsNode> = listOf(
             SettingsNode(
                 "appearance.lines", "Connection Lines", "🕸️",
                 note = "Line color, width and style: straight, curved, or animated pulsing."
-            )
+            ),
+            SettingsNode(
+                "appearance.favorite", "Favorites", "🌟",
+                note = "Your favorite themes and colors."
+            )	    
         )
     ),
 
@@ -183,6 +191,13 @@ val settingsTree: List<SettingsNode> = listOf(
  * Any item that is not listed here shows "Coming soon".
  * Pages should scroll by themselves (use Modifier.verticalScroll).
  */
+
 val settingsPages: Map<String, @Composable (SettingsEnv) -> Unit> = mapOf(
-    // Pages will be added here, one line each.
+    page("appearance.colors") { env -> ColorsPage(env) },
+    page("appearance.backgrounds") { env -> BackgroundsPage(env) },
+    page("appearance.favorite") { env -> FavoritesPage(env) },
+    page("appearance.glow") {env -> GlowPage(env)},
+    page("appearance.lines") {env -> LinesPage(env)},
 )
+)
+

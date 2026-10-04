@@ -3,6 +3,7 @@ package com.superapp.app.features.settings
 import androidx.compose.runtime.Composable
 import com.superapp.app.core.feature.FeatureRegistry
 import com.superapp.app.core.settings.SettingsRepository
+import com.superapp.app.features.settings.appearance.BackgroundsPage
 import com.superapp.app.features.settings.appearance.ColorsPage
 import com.superapp.app.features.settings.appearance.FavoritesPage
 import com.superapp.app.features.settings.appearance.GlowPage
@@ -193,11 +194,10 @@ val settingsTree: List<SettingsNode> = listOf(
  */
 
 val settingsPages: Map<String, @Composable (SettingsEnv) -> Unit> = mapOf(
-    page("appearance.colors") { env -> ColorsPage(env) },
-    page("appearance.backgrounds") { env -> BackgroundsPage(env) },
-    page("appearance.favorite") { env -> FavoritesPage(env) },
-    page("appearance.glow") {env -> GlowPage(env)},
-    page("appearance.lines") {env -> LinesPage(env)},
-)
+    "appearance.colors" to { env -> ColorsPage(env) },
+    "appearance.backgrounds" to { env -> BackgroundsPage(env) },
+    "appearance.favorite" to { env -> FavoritesPage(env) },
+    "appearance.glow" to { env -> GlowPage(env) },
+    "appearance.lines" to { env -> LinesPage(env) }
 )
 

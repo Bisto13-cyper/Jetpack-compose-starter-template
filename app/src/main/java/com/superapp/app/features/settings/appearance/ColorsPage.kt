@@ -87,18 +87,40 @@ fun ColorsPage(env: SettingsEnv) {
         }
 
         SectionLabel("Your colors")
-        ColorPicker("Background", theme.background) { c ->
-            env.repository.updateTheme { it.copy(background = c) }
-        }
-        ColorPicker("Panels and cards", theme.surface) { c ->
-            env.repository.updateTheme { it.copy(surface = c) }
-        }
-        ColorPicker("Accent (buttons, rings, highlights)", theme.primary) { c ->
-            env.repository.updateTheme { it.copy(primary = c) }
-        }
-        ColorPicker("Text", theme.onBackground) { c ->
-            env.repository.updateTheme { it.copy(onBackground = c) }
-        }
+
+
+	ColorPicker(
+    	title = "Background",
+    	color = theme.background,
+    	onColorChange = { c ->
+        env.repository.updateTheme { it.copy(background = c) }
+    }
+)
+
+ColorPicker(
+    title = "Panels and cards",
+    color = theme.surface,
+    onColorChange = { c ->
+        env.repository.updateTheme { it.copy(surface = c) }
+    }
+)
+
+ColorPicker(
+    title = "Accent (buttons, rings, highlights)",
+    color = theme.primary,
+    onColorChange = { c ->
+        env.repository.updateTheme { it.copy(primary = c) }
+    }
+)
+
+ColorPicker(
+    title = "Text",
+    color = theme.onBackground,
+    onColorChange = { c ->
+        env.repository.updateTheme { it.copy(onBackground = c) }
+    }
+)
+
 
         OutlinedButton(
             onClick = {

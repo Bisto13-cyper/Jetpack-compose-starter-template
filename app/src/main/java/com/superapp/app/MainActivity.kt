@@ -33,7 +33,7 @@ import com.superapp.app.core.settings.SettingsRepository
 import com.superapp.app.core.theme.AppTheme
 import com.superapp.app.core.ui.SideMenuButton
 import com.superapp.app.features.home.HomeScreen
-import com.superapp.app.features.settings.SettingsEnv
+import com.superapp.app.core.settings.SettingsEnv
 import com.superapp.app.features.settings.SettingsScreen
 
 /**

@@ -40,7 +40,7 @@ import com.superapp.app.core.theme.ThemePreset
 import com.superapp.app.core.theme.ThemeSettings
 import com.superapp.app.core.theme.themePresets
 import com.superapp.app.core.ui.ColorPicker
-import com.superapp.app.features.settings.SettingsEnv
+import com.superapp.app.core.settings.SettingsEnv
 
 /**
  * SETTINGS FILE 7 - Settings > Appearance > Colors & Themes.

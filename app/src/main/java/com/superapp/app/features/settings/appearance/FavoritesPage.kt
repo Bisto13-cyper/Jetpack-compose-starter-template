@@ -43,9 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superapp.app.core.images.ImageStore
 import com.superapp.app.core.settings.FavoriteLook
+import com.superapp.app.core.settings.FeatureStyle
 import com.superapp.app.core.settings.FavoritesStore
 import com.superapp.app.core.theme.ThemeSettings
-import com.superapp.app.features.settings.SettingsEnv
+import com.superapp.app.core.settings.SettingsEnv
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -142,7 +143,7 @@ fun FavoritesPage(env: SettingsEnv) {
         favorites.forEach { look ->
             FavoriteCard(
                 look = look,
-                active = isSameLook(look.theme, theme),
+                active = isSameLook(look, theme, env.repository.featureStyles.value),
                 busy = busy,
                 onApply = {
                     scope.launch {
@@ -163,12 +164,36 @@ fun FavoritesPage(env: SettingsEnv) {
     }
 }
 
-/** True when the four main colors match. */
-private fun isSameLook(a: ThemeSettings, b: ThemeSettings): Boolean =
-    a.background == b.background &&
-        a.surface == b.surface &&
-        a.primary == b.primary &&
-        a.onBackground == b.onBackground
+/** True when the saved appearance matches the current appearance. */
+private fun isSameLook(
+    look: FavoriteLook,
+    theme: ThemeSettings,
+    styles: Map<String, FeatureStyle>
+): Boolean {
+    val savedTheme = look.theme
+    val sameTheme =
+        savedTheme.background == theme.background &&
+            savedTheme.surface == theme.surface &&
+            savedTheme.primary == theme.primary &&
+            savedTheme.onBackground == theme.onBackground &&
+            savedTheme.circleScale == theme.circleScale &&
+            savedTheme.glowStrength == theme.glowStrength &&
+            savedTheme.glowSize == theme.glowSize &&
+            savedTheme.glowColor == theme.glowColor &&
+            savedTheme.lineStyle == theme.lineStyle &&
+            savedTheme.lineColor == theme.lineColor &&
+            savedTheme.lineWidth == theme.lineWidth &&
+            savedTheme.lineAlpha == theme.lineAlpha &&
+            (savedTheme.backgroundImagePath != null) == (theme.backgroundImagePath != null)
+
+    if (!sameTheme) return false
+
+    val currentAccents = styles.mapNotNull { (id, style) ->
+        style.accent?.let { id to it }
+    }.toMap()
+
+    return look.accents == currentAccents
+}
 
 @Composable
 private fun FavoriteCard(

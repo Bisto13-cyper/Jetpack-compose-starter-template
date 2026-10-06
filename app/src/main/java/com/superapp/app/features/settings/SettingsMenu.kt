@@ -1,49 +1,16 @@
 package com.superapp.app.features.settings
 
 import androidx.compose.runtime.Composable
-import com.superapp.app.core.feature.FeatureRegistry
-import com.superapp.app.core.settings.SettingsRepository
+import com.superapp.app.core.settings.SettingsEnv
+import com.superapp.app.core.settings.SettingsNode
 import com.superapp.app.features.settings.appearance.BackgroundsPage
 import com.superapp.app.features.settings.appearance.ColorsPage
 import com.superapp.app.features.settings.appearance.FavoritesPage
 import com.superapp.app.features.settings.appearance.GlowPage
 import com.superapp.app.features.settings.appearance.LinesPage
-
-/**
- * SETTINGS FILE 1 - The whole Settings menu, as data.
- *
- * Settings is a tree:  Category -> (sub-category) -> Page.
- * Tapping a row opens its children. A row with no children is a PAGE.
- *
- * HOW TO ADD A SETTINGS ITEM:
- *   1. Add one SettingsNode line to settingsTree below.
- *   2. Write its page (a @Composable function that takes SettingsEnv).
- *   3. Register the page with one line in settingsPages (bottom of this file).
- *
- * Until step 3 is done, the row shows "Coming soon" automatically and its
- * page shows the note. When the page is registered, the tag disappears.
- *
- * IDs must be unique. Pattern: "category.page", for example "security.applock".
- */
-class SettingsNode(
-    val id: String,
-    val title: String,
-    val emoji: String,
-    /** Sub-items. If empty, this node is a page. */
-    val children: List<SettingsNode> = emptyList(),
-    /** What this page will do. Shown on the "Coming soon" page. */
-    val note: String = ""
-)
-
-/**
- * What every settings page receives:
- *  - repository : read and save settings
- *  - registry   : the list of all features (for feature management, locks...)
- */
-class SettingsEnv(
-    val repository: SettingsRepository,
-    val registry: FeatureRegistry
-)
+import com.superapp.app.features.settings.canvas.VisibilityPage
+import com.superapp.app.features.settings.canvas.NodeLayoutPage
+import com.superapp.app.features.settings.canvas.DragDropPage
 
 val settingsTree: List<SettingsNode> = listOf(
 
@@ -56,7 +23,7 @@ val settingsTree: List<SettingsNode> = listOf(
             ),
             SettingsNode(
                 "appearance.backgrounds", "Backgrounds", "🖼️",
-                note = "A separate background image or color for each screen (Home, WebView, APIs, Code Editor...)."
+                note = "Choose a global background photo for the app. The background color is controlled from Colors & Themes."
             ),
             SettingsNode(
                 "appearance.glow", "Glow", "✨",
@@ -193,11 +160,16 @@ val settingsTree: List<SettingsNode> = listOf(
  * Pages should scroll by themselves (use Modifier.verticalScroll).
  */
 
+private fun page(id: String, content: @Composable (SettingsEnv) -> Unit) = id to content
+
 val settingsPages: Map<String, @Composable (SettingsEnv) -> Unit> = mapOf(
-    "appearance.colors" to { env -> ColorsPage(env) },
-    "appearance.backgrounds" to { env -> BackgroundsPage(env) },
-    "appearance.favorite" to { env -> FavoritesPage(env) },
-    "appearance.glow" to { env -> GlowPage(env) },
-    "appearance.lines" to { env -> LinesPage(env) }
+    page("appearance.colors") { env -> ColorsPage(env) },
+    page("appearance.backgrounds") { env -> BackgroundsPage(env) },
+    page("appearance.glow") { env -> GlowPage(env) },
+    page("appearance.lines") { env -> LinesPage(env) },
+    page("appearance.favorite") { env -> FavoritesPage(env) },
+    page("canvas.layout") { env -> NodeLayoutPage(env) },
+    page("canvas.drag") { env -> DragDropPage(env) },
+    page("canvas.visibility") { env -> VisibilityPage(env) }
 )
 

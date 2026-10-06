@@ -37,7 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superapp.app.core.images.ImageStore
-import com.superapp.app.features.settings.SettingsEnv
+import com.superapp.app.core.settings.SettingsEnv
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

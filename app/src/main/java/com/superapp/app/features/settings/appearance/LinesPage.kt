@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.superapp.app.core.theme.LineStyle
 import com.superapp.app.core.theme.ThemeSettings
 import com.superapp.app.core.ui.ColorPicker
-import com.superapp.app.features.settings.SettingsEnv
+import com.superapp.app.core.settings.SettingsEnv
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin

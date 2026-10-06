@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.superapp.app.core.settings.SettingsEnv
+import com.superapp.app.core.settings.SettingsNode
 
 /**
  * SETTINGS FILE 2 - The Settings screen.

@@ -130,8 +130,9 @@ fun LinesPage(env: SettingsEnv) {
         if (theme.lineColor != null) {
             ColorPicker(
                 title = "Line color",
-                color = theme.lineColor ?: theme.primary
-            ) { c -> env.repository.updateTheme { it.copy(lineColor = c) } }
+                color = theme.lineColor ?: theme.primary,
+                onColorChange = { c -> env.repository.updateTheme { it.copy(lineColor = c) } }
+            )
         }
 
         OutlinedButton(

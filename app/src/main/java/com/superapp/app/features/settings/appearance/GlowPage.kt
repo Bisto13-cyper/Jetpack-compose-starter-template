@@ -112,8 +112,9 @@ fun GlowPage(env: SettingsEnv) {
         if (theme.glowColor != null) {
             ColorPicker(
                 title = "Glow color (all circles)",
-                color = theme.glowColor ?: theme.primary
-            ) { c -> env.repository.updateTheme { it.copy(glowColor = c) } }
+                color = theme.glowColor ?: theme.primary,
+                onColorChange = { c -> env.repository.updateTheme { it.copy(glowColor = c) } }
+            )
         }
 
         OutlinedButton(

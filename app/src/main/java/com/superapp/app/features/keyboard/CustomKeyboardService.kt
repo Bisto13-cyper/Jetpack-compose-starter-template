@@ -88,8 +88,9 @@ class CustomKeyboardService : InputMethodService() {
 
     private fun sendCtrlKey(ic: InputConnection, keyCode: Int) {
         val meta = KeyEvent.META_CTRL_ON
-        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode, 0, meta))
-        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode, 0, meta))
+        val now = System.currentTimeMills()
+        ic.sendKeyEvent(KeyEvent(now,now,KeyEvent.ACTION_DOWN, keyCode, 0, meta))
+        ic.sendKeyEvent(KeyEvent(now,now,KeyEvent.ACTION_UP, keyCode, 0, meta))
     }
 
     fun sendArrowLeft()  = sendKey(KeyEvent.KEYCODE_DPAD_LEFT)

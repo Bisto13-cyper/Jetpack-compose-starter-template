@@ -19,6 +19,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,33 +51,34 @@ fun EditorSettingsScreen(onClose: () -> Unit) {
             TextButton(onClick = onClose) { Text("Done") }
         }
 
-        ToggleRow("Show line numbers", s.showLineNumbers) {
-            EditorSettingsStore.update { it.copy(showLineNumbers = it2(it)) }
+        // The Switch value is named `checked` so it is not shadowed by the `it` of update { }.
+        ToggleRow("Show line numbers", s.showLineNumbers) { checked ->
+            EditorSettingsStore.update { st -> st.copy(showLineNumbers = checked) }
         }
-        ToggleRow("Word wrap", s.wordWrap) {
-            EditorSettingsStore.update { it.copy(wordWrap = it2(it)) }
+        ToggleRow("Word wrap", s.wordWrap) { checked ->
+            EditorSettingsStore.update { st -> st.copy(wordWrap = checked) }
         }
-        ToggleRow("Auto-close brackets", s.autoCloseBrackets) {
-            EditorSettingsStore.update { it.copy(autoCloseBrackets = it2(it)) }
+        ToggleRow("Auto-close brackets", s.autoCloseBrackets) { checked ->
+            EditorSettingsStore.update { st -> st.copy(autoCloseBrackets = checked) }
         }
-        ToggleRow("Auto-close quotes", s.autoCloseQuotes) {
-            EditorSettingsStore.update { it.copy(autoCloseQuotes = it2(it)) }
+        ToggleRow("Auto-close quotes", s.autoCloseQuotes) { checked ->
+            EditorSettingsStore.update { st -> st.copy(autoCloseQuotes = checked) }
         }
-        ToggleRow("Auto-indent", s.autoIndent) {
-            EditorSettingsStore.update { it.copy(autoIndent = it2(it)) }
+        ToggleRow("Auto-indent", s.autoIndent) { checked ->
+            EditorSettingsStore.update { st -> st.copy(autoIndent = checked) }
         }
-        ToggleRow("Highlight current line", s.highlightCurrentLine) {
-            EditorSettingsStore.update { it.copy(highlightCurrentLine = it2(it)) }
+        ToggleRow("Highlight current line", s.highlightCurrentLine) { checked ->
+            EditorSettingsStore.update { st -> st.copy(highlightCurrentLine = checked) }
         }
 
         SliderRow("Font size", s.fontSizeSp.toFloat(), 10f..26f) { v ->
-            EditorSettingsStore.update { it.copy(fontSizeSp = v.toInt()) }
+            EditorSettingsStore.update { st -> st.copy(fontSizeSp = v.toInt()) }
         }
         SliderRow("Line height", s.lineHeightMultiplier, 1f..2f) { v ->
-            EditorSettingsStore.update { it.copy(lineHeightMultiplier = v) }
+            EditorSettingsStore.update { st -> st.copy(lineHeightMultiplier = v) }
         }
         SliderRow("Tab width", s.tabWidth.toFloat(), 2f..8f) { v ->
-            EditorSettingsStore.update { it.copy(tabWidth = v.toInt()) }
+            EditorSettingsStore.update { st -> st.copy(tabWidth = v.toInt()) }
         }
 
         ColorRow("Background", s.backgroundColor) {
@@ -114,8 +116,6 @@ fun EditorSettingsScreen(onClose: () -> Unit) {
     }
 }
 
-private fun it2(b: Boolean): Boolean = b
-
 @Composable
 private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -132,9 +132,23 @@ private fun SliderRow(label: String, value: Float, range: ClosedFloatingPointRan
     }
 }
 
+private fun formatHex(value: Long): String = "#%08X".format(value)
+
+/** Accepts exactly #RRGGBB or #AARRGGBB (the # is optional); returns null while the text is incomplete. */
+private fun parseHex(text: String): Long? {
+    val cleaned = text.trim().removePrefix("#")
+    if (cleaned.length != 6 && cleaned.length != 8) return null
+    val parsed = cleaned.toLongOrNull(16) ?: return null
+    return if (cleaned.length == 6) 0xFF000000L or parsed else parsed
+}
+
 @Composable
 private fun ColorRow(label: String, value: Long, onChange: (Long) -> Unit) {
-    var hex by remember(value) { mutableStateOf("#%08X".format(value)) }
+    var hex by remember { mutableStateOf(formatHex(value)) }
+    // Re-sync the text only when the colour changed from outside (e.g. reset), never while typing.
+    LaunchedEffect(value) {
+        if (parseHex(hex) != value) hex = formatHex(value)
+    }
     Column {
         Text(label, fontSize = 13.sp, color = Color(EditorSettingsStore.settings.textColor))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -147,12 +161,9 @@ private fun ColorRow(label: String, value: Long, onChange: (Long) -> Unit) {
             Spacer(Modifier.width(8.dp))
             OutlinedTextField(
                 value = hex,
-                onValueChange = {
-                    hex = it
-                    val cleaned = it.removePrefix("#")
-                    val parsed = cleaned.toLongOrNull(16) ?: return@OutlinedTextField
-                    val argb = if (cleaned.length <= 6) 0xFF000000L or parsed else parsed
-                    onChange(argb)
+                onValueChange = { text ->
+                    hex = text
+                    parseHex(text)?.let(onChange)
                 },
                 singleLine = true
             )

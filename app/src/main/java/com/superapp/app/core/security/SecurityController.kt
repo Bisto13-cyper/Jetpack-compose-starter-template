@@ -59,7 +59,7 @@ class SecurityController(
     }
 
     fun authenticateApp() {
-        authenticate("Unlock app") { _appLocked.value = false }
+        authenticate("Unlock app", onSuccess =  { _appLocked.value = false })
     }
 
     fun isNodeLocked(nodeId: String): Boolean =

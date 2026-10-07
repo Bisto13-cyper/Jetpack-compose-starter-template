@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.source
 
 import android.Manifest
@@ -127,4 +126,3 @@ class LocalFileSource(private val context: Context) : FileSource {
         File(item.id).renameTo(File(newParent.id, item.name))
 }
 
------------------------------------------------------------------------

@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.store
 
 import android.content.Context
@@ -204,4 +203,3 @@ class FilesServices private constructor(context: Context) {
     }
 }
 
------------------------------------------------------------------------

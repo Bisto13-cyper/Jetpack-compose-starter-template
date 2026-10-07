@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.ssh
 
 import android.content.Context
@@ -202,4 +201,3 @@ class SshConnectionManager(context: Context, private val profiles: SshProfileSto
     }
 }
 
------------------------------------------------------------------------

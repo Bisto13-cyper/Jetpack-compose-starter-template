@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.source
 
 import com.superapp.app.features.files.model.ConflictPolicy
@@ -197,4 +196,3 @@ object FileOps {
     }
 }
 
------------------------------------------------------------------------

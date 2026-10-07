@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.model
 
 import android.webkit.MimeTypeMap
@@ -121,4 +120,3 @@ fun formatSize(bytes: Long): String {
 fun formatDate(ms: Long): String =
     if (ms <= 0) "—" else DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(ms))
 
------------------------------------------------------------------------

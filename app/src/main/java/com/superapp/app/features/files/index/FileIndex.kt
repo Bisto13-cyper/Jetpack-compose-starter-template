@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.index
 
 import android.content.ContentValues
@@ -224,4 +223,3 @@ class FileIndex(context: Context) {
     }
 }
 
------------------------------------------------------------------------

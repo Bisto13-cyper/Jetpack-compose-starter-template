@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.source
 
 import android.content.Context
@@ -125,4 +124,3 @@ class SafFileSource(context: Context, val treeUri: Uri) : FileSource {
     }
 }
 
------------------------------------------------------------------------

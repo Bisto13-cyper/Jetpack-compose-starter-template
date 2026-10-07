@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.source
 
 import com.jcraft.jsch.ChannelSftp
@@ -158,4 +157,3 @@ class SshFileSource(val profile: SshProfile, private val manager: SshConnectionM
     } catch (_: Exception) { false }
 }
 
------------------------------------------------------------------------

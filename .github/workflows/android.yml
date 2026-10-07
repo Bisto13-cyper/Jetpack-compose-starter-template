@@ -1,29 +1,38 @@
-build:
-  runs-on: ubuntu-latest
+name: Android Build
 
-  steps:
-  - name: Checkout Code
-    uses: actions/checkout@v4
+on:
+  push:
+    branches: [ main ]
 
-  - name: Set up JDK 17
-    uses: actions/setup-java@v4
-    with:
-      java-version: '17'
-      distribution: 'temurin'
-      cache: 'gradle'
+  workflow_dispatch:
 
-  - name: Setup Gradle
-    uses: gradle/actions/setup-gradle@v3
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-  - name: Make gradlew executable
-    run: chmod +x gradlew
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-  - name: Build Debug APK
-    run: ./gradlew assembleDebug --build-cache --parallel
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
 
-  - name: Upload APK Artifact
-    uses: actions/upload-artifact@v4
-    with:
-      name: app-debug
-      path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --build-cache --parallel
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

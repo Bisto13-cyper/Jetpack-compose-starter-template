@@ -2,13 +2,14 @@ package com.superapp.app
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -26,9 +27,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import com.superapp.app.core.feature.FeatureRegistry
 import com.superapp.app.core.navigation.Navigator
 import com.superapp.app.core.navigation.Routes
+import com.superapp.app.core.security.SecurityController
+import com.superapp.app.core.security.SecurityRepository
 import com.superapp.app.core.settings.SettingsRepository
 import com.superapp.app.core.theme.AppTheme
 import com.superapp.app.core.ui.SideMenuButton
@@ -40,43 +44,72 @@ import com.superapp.app.features.settings.SettingsScreen
  * FILE 9 - The entry point. It connects everything:
  *   settings -> theme -> background -> current screen -> side button.
  *
- * You rarely need to edit this file. To add a feature, edit AppFeatures.kt.
- *
- * WHAT IT DOES:
- *  - Loads the saved settings and applies the colors.
- *  - Draws the background image (if the user picked one).
- *  - Shows the screen for the current route: Home, Settings, or a feature.
- *  - Draws the side button on top of every screen.
- *  - Phone back button: goes to Home from anywhere else.
- *
- * HOW TO CHANGE:
- *  - Background image visibility: change alpha = 0.35f in BackgroundImage
- *  - Space reserved under the side button: change 60.dp
- *  - Settings screen: see features/settings/ (SettingsMenu.kt is the menu)
+ * Security is integrated here because this is the single route entry point
+ * for Home, Settings, and every registered feature.
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
+
+    private lateinit var securityController: SecurityController
+
+    private val credentialLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            securityController.onCredentialResult(result.resultCode == RESULT_OK)
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         val repository = SettingsRepository(this)
+        val securityRepository = SecurityRepository(this)
         val registry = FeatureRegistry(appFeatures)
 
-        setContent {
-            AppRoot(repository = repository, registry = registry)
+        securityController = SecurityController(this, securityRepository).also {
+            it.bindCredentialLauncher(credentialLauncher)
         }
+
+        setContent {
+            AppRoot(
+                repository = repository,
+                registry = registry,
+                securityRepository = securityRepository,
+                securityController = securityController
+            )
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        securityController.onStart()
+    }
+
+    override fun onStop() {
+        securityController.onStop()
+        super.onStop()
     }
 }
 
 @Composable
 fun AppRoot(
     repository: SettingsRepository,
-    registry: FeatureRegistry
+    registry: FeatureRegistry,
+    securityRepository: SecurityRepository,
+    securityController: SecurityController
 ) {
     val theme by repository.theme.collectAsState()
     val styles by repository.featureStyles.collectAsState()
+    val appLocked by securityController.appLocked.collectAsState()
     val navigator = remember { Navigator() }
+
+    fun openRoute(route: String) {
+        val feature = registry.find(route)
+        securityController.requestRoute(
+            route = route,
+            title = feature?.title ?: route
+        ) {
+            navigator.go(route)
+        }
+    }
 
     AppTheme(settings = theme) {
         Box(
@@ -86,42 +119,83 @@ fun AppRoot(
         ) {
             BackgroundImage(path = theme.backgroundImagePath)
 
-            // Phone back button: return to Home from any other screen.
-            BackHandler(enabled = !navigator.isHome) { navigator.home() }
-
-            when (val route = navigator.current) {
-                Routes.HOME -> HomeScreen(
-                    features = registry.all(),
-                    styles = styles,
-                    onOpen = { navigator.go(it) },
-                    onOpenSettings = { navigator.settings() },
-                    modifier = Modifier.navigationBarsPadding()
+            if (appLocked) {
+                SecurityLockOverlay(
+                    onAuthenticate = securityController::authenticateApp
                 )
+            } else {
+                // Phone back button: return to Home from any other screen.
+                BackHandler(enabled = !navigator.isHome) { navigator.home() }
 
-                Routes.SETTINGS -> ScreenFrame {
-                    SettingsScreen(env = remember { SettingsEnv(repository, registry) })
-                }
+                when (val route = navigator.current) {
+                    Routes.HOME -> HomeScreen(
+                        features = registry.all(),
+                        styles = styles,
+                        onOpen = ::openRoute,
+                        onOpenSettings = { navigator.settings() },
+                        modifier = Modifier.navigationBarsPadding()
+                    )
 
-                else -> {
-                    val feature = registry.find(route)
-                    if (feature != null) {
-                        ScreenFrame { feature.Content(onBack = { navigator.home() }) }
-                    } else {
-                        // Unknown route: go home.
-                        LaunchedEffect(route) { navigator.home() }
+                    Routes.SETTINGS -> ScreenFrame {
+                        SettingsScreen(
+                            env = remember(repository, registry, securityRepository, securityController) {
+                                SettingsEnv(
+                                    repository = repository,
+                                    registry = registry,
+                                    security = securityRepository,
+                                    securityController = securityController
+                                )
+                            }
+                        )
+                    }
+
+                    else -> {
+                        val feature = registry.find(route)
+                        if (feature != null) {
+                            ScreenFrame {
+                                feature.Content(onBack = { navigator.home() })
+                            }
+                        } else {
+                            // Unknown route: go home.
+                            LaunchedEffect(route) { navigator.home() }
+                        }
                     }
                 }
-            }
 
-            SideMenuButton(
-                features = registry.all(),
-                currentRoute = navigator.current,
-                onNavigate = { navigator.go(it) },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(top = 8.dp, start = 12.dp)
+                SideMenuButton(
+                    features = registry.all(),
+                    currentRoute = navigator.current,
+                    onNavigate = ::openRoute,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .statusBarsPadding()
+                        .padding(top = 8.dp, start = 12.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * This is not an authentication UI. Android's BiometricPrompt or device
+ * credential screen performs the actual authentication.
+ */
+@Composable
+private fun SecurityLockOverlay(
+    onAuthenticate: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "Authentication required",
+                color = MaterialTheme.colorScheme.onBackground
             )
+            androidx.compose.material3.TextButton(onClick = onAuthenticate) {
+                Text("Authenticate")
+            }
         }
     }
 }
@@ -139,8 +213,6 @@ private fun ScreenFrame(content: @Composable () -> Unit) {
         content()
     }
 }
-
-
 
 /** Draws the user's background image faintly behind everything. */
 @Composable

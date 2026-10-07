@@ -1,6 +1,9 @@
 package com.superapp.app.features.settings
 
 import androidx.compose.runtime.Composable
+import com.superapp.app.features.settings.security.AppLockPage
+import com.superapp.app.features.settings.security.BiometricsPage
+import com.superapp.app.features.settings.security.NodeLockPage
 import com.superapp.app.core.settings.SettingsEnv
 import com.superapp.app.core.settings.SettingsNode
 import com.superapp.app.features.settings.appearance.BackgroundsPage
@@ -170,6 +173,9 @@ val settingsPages: Map<String, @Composable (SettingsEnv) -> Unit> = mapOf(
     page("appearance.favorite") { env -> FavoritesPage(env) },
     page("canvas.layout") { env -> NodeLayoutPage(env) },
     page("canvas.drag") { env -> DragDropPage(env) },
-    page("canvas.visibility") { env -> VisibilityPage(env) }
+    page("canvas.visibility") { env -> VisibilityPage(env) },
+    page("security.applock") { env -> AppLockPage(env) },
+    page("security.nodelock") { env -> NodeLockPage(env) },
+    page("security.biometrics") { env -> BiometricsPage(env) }
 )
 

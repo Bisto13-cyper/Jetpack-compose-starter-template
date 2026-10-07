@@ -1,6 +1,8 @@
 package com.superapp.app.core.settings
 
 import com.superapp.app.core.feature.FeatureRegistry
+import com.superapp.app.core.security.SecurityController
+import com.superapp.app.core.security.SecurityRepository
 
 /**
  * Settings models shared by the Settings UI.
@@ -20,5 +22,7 @@ class SettingsNode(
 
 class SettingsEnv(
     val repository: SettingsRepository,
-    val registry: FeatureRegistry
+    val registry: FeatureRegistry,
+    val security: SecurityRepository,
+    val securityController: SecurityController
 )

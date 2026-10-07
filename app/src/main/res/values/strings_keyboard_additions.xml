@@ -1,0 +1,5 @@
+<!-- Add these strings to app/src/main/res/values/strings.xml -->
+<string name="keyboard_label">SuperApp Keyboard</string>
+<string name="keyboard_subtype_en">English</string>
+<string name="keyboard_subtype_de">Deutsch</string>
+<string name="keyboard_subtype_fr">Français</string>

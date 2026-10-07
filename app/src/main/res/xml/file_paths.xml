@@ -1,0 +1,8 @@
+-----------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Used only by androidx.core.content.FileProvider (authority: ${applicationId}.files.fileprovider)
+     to hand a file to "Open with" / "Share" apps with a temporary read grant.
+     Nothing is shared unless the user taps Open/Share on that file. -->
+<paths>
+    <root-path name="device_files" path="" />
+</paths>

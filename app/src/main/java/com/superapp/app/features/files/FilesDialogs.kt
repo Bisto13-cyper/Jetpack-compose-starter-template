@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files
 
 import android.content.ClipData
@@ -368,4 +367,3 @@ private fun SshEditDialog(c: FilesController, existing: SshProfile?, onDismiss: 
     )
 }
 
------------------------------------------------------------------------

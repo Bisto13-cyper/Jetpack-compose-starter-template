@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files.archive
 
 import com.superapp.app.features.files.model.FileItem
@@ -421,4 +420,3 @@ internal class TarReader(private val input: InputStream) {
     }
 }
 
------------------------------------------------------------------------

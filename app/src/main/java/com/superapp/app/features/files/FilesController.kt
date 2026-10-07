@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files
 
 import android.app.Activity
@@ -592,4 +591,3 @@ class FilesController(private val context: Context) {
     }
 }
 
------------------------------------------------------------------------

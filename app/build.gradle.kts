@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
+    implementation("androidx.documentfile:documentfile:1.0.1")
 
     // Hilt dependencies
     implementation(libs.hilt.android)

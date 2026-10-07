@@ -1,4 +1,3 @@
------------------------------------------------------------------------
 package com.superapp.app.features.files
 
 import android.app.Activity
@@ -542,4 +541,3 @@ internal fun HostPromptDialog(check: HostCheck, onTrust: () -> Unit, onCancel: (
     }
 }
 
------------------------------------------------------------------------

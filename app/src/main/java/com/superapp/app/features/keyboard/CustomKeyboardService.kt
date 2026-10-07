@@ -88,7 +88,7 @@ class CustomKeyboardService : InputMethodService() {
 
     private fun sendCtrlKey(ic: InputConnection, keyCode: Int) {
         val meta = KeyEvent.META_CTRL_ON
-        val now = System.currentTimeMills()
+        val now = System.currentTimeMillis()
         ic.sendKeyEvent(KeyEvent(now,now,KeyEvent.ACTION_DOWN, keyCode, 0, meta))
         ic.sendKeyEvent(KeyEvent(now,now,KeyEvent.ACTION_UP, keyCode, 0, meta))
     }

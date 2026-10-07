@@ -40,6 +40,13 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources{
+	    excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+	    excludes += "META-INF/LICENSE*"
+	    excludes += "META-INF/NOTICE*"
+}
+}
 }
 
 dependencies {

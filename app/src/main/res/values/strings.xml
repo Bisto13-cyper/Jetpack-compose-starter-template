@@ -25,4 +25,16 @@
     <string name="clock_widget_description">Start your saved timers and see the running one.</string>
     <string name="clock_widget_no_timer">No timer running</string>
     <string name="clock_widget_empty">No saved timers. Create one in the Clock screen.</string>
+    <string name="keyboard_label">SuperApp Keyboard</string>
+    <string name="keyboard_subtype_en">English</string>
+    <string name="keyboard_subtype_de">Deutsch</string>
+    <string name="keyboard_subtype_fr">Français</string>
+    <string name="editor_feature_title">Code Editor</string>
+    <string name="editor_open_workspace">Open folder</string>
+    <string name="editor_no_workspace">No workspace selected</string>
+    <string name="editor_unsaved">Unsaved changes</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_find">Find</string>
+    <string name="editor_replace">Replace</string>
+    <string name="editor_settings">Editor settings</string>
 </resources>

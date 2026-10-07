@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="clock_timer_widget_label">Timers</string>
-    <string name="clock_widget_description">Start your saved timers and see the running one.</string>
-    <string name="clock_widget_no_timer">No timer running</string>
-    <string name="clock_widget_empty">No saved timers. Create one in the Clock screen.</string>
-</resources>

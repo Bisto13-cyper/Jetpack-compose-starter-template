@@ -21,12 +21,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.fragment.app.FragmentActivity
 import com.superapp.app.core.feature.FeatureRegistry
 import com.superapp.app.core.navigation.Navigator
@@ -152,8 +155,12 @@ fun AppRoot(
                     else -> {
                         val feature = registry.find(route)
                         if (feature != null) {
-                            ScreenFrame {
+                            if (route == "editor") {
                                 feature.Content(onBack = { navigator.home() })
+                            } else {
+                                ScreenFrame {
+                                    feature.Content(onBack = { navigator.home() })
+                                }
                             }
                         } else {
                             // Unknown route: go home.
@@ -162,15 +169,17 @@ fun AppRoot(
                     }
                 }
 
-                SideMenuButton(
-                    features = registry.all(),
-                    currentRoute = navigator.current,
-                    onNavigate = ::openRoute,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .statusBarsPadding()
-                        .padding(top = 8.dp, start = 12.dp)
-                )
+                if (navigator.current != "editor") {
+                    SideMenuButton(
+                        features = registry.all(),
+                        currentRoute = navigator.current,
+                        onNavigate = ::openRoute,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .statusBarsPadding()
+                            .padding(top = 8.dp, start = 12.dp)
+                    )
+                }
             }
         }
     }
@@ -217,11 +226,15 @@ private fun ScreenFrame(content: @Composable () -> Unit) {
 /** Draws the user's background image faintly behind everything. */
 @Composable
 private fun BackgroundImage(path: String?) {
-    if (path == null) return
-    val bitmap = remember(path) { loadScaledBitmap(path) } ?: return
+    val bitmap by produceState<ImageBitmap?>(initialValue = null, path) {
+        value = if (path.isNullOrBlank()) null else withContext(Dispatchers.IO) {
+            loadScaledBitmap(path)
+        }
+    }
+    val image = bitmap ?: return
 
     Image(
-        bitmap = bitmap,
+        bitmap = image,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         alpha = 0.35f,

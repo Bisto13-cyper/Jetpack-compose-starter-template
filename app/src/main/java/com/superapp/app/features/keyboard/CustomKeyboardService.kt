@@ -27,7 +27,7 @@ class CustomKeyboardService : InputMethodService() {
     }
 
     override fun onCreateInputView(): View {
-        KeyboardClipboard.refreshFromSystem(this)
+        runCatching { KeyboardClipboard.refreshFromSystem(this) }
         return ComposeView(this).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
             setContent {
@@ -40,7 +40,7 @@ class CustomKeyboardService : InputMethodService() {
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        KeyboardClipboard.refreshFromSystem(this)
+        runCatching { KeyboardClipboard.refreshFromSystem(this) }
     }
 
     // ------------------------------------------------------------------
@@ -48,43 +48,57 @@ class CustomKeyboardService : InputMethodService() {
     // ------------------------------------------------------------------
 
     fun commitText(text: String) {
-        currentInputConnection?.commitText(text, 1)
+        runCatching { currentInputConnection?.commitText(text, 1) }
     }
 
     fun backspace() {
         val ic = currentInputConnection ?: return
-        val selected = runCatching { ic.getSelectedText(0) }.getOrNull()
-        if (!selected.isNullOrEmpty()) {
-            ic.commitText("", 1)
-        } else {
-            ic.deleteSurroundingText(1, 0)
+        runCatching {
+            val selected = ic.getSelectedText(0)
+            if (!selected.isNullOrEmpty()) {
+                ic.commitText("", 1)
+            } else {
+                // Prefer code-point-aware deletion so surrogate pairs (for example emoji)
+                // are not split. Fall back for editors that do not support this call.
+                val deleted = runCatching { ic.deleteSurroundingTextInCodePoints(1, 0) }
+                    .getOrDefault(false)
+                if (!deleted) ic.deleteSurroundingText(1, 0)
+            }
         }
     }
 
     fun sendEnter() {
         val ic = currentInputConnection ?: return
-        val info = currentInputEditorInfo
-        val action = info?.imeOptions?.and(EditorInfo.IME_MASK_ACTION) ?: EditorInfo.IME_ACTION_NONE
-        if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
-            ic.performEditorAction(action)
-        } else {
+        runCatching {
+            val info = currentInputEditorInfo
+            val action = info?.imeOptions?.and(EditorInfo.IME_MASK_ACTION) ?: EditorInfo.IME_ACTION_NONE
+            if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
+                if (!ic.performEditorAction(action)) sendEnterKey(ic)
+            } else {
+                sendEnterKey(ic)
+            }
+        }
+    }
+
+    private fun sendEnterKey(ic: InputConnection) {
+        runCatching {
             ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
             ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
         }
     }
 
-    fun selectAll() { currentInputConnection?.performContextMenuAction(android.R.id.selectAll) }
-    fun copy()      { currentInputConnection?.performContextMenuAction(android.R.id.copy) }
-    fun cut()       { currentInputConnection?.performContextMenuAction(android.R.id.cut) }
-    fun paste()     { currentInputConnection?.performContextMenuAction(android.R.id.paste) }
+    fun selectAll() { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.selectAll) } }
+    fun copy()      { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.copy) } }
+    fun cut()       { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.cut) } }
+    fun paste()     { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.paste) } }
 
     /**
      * Best-effort undo/redo. Android has no public InputConnection undo API,
      * so we dispatch Ctrl+Z / Ctrl+Y KeyEvents. Many editors honour them,
      * some do not. This is documented behaviour, not a fake implementation.
      */
-    fun undo() { currentInputConnection?.let { sendCtrlKey(it, KeyEvent.KEYCODE_Z) } }
-    fun redo() { currentInputConnection?.let { sendCtrlKey(it, KeyEvent.KEYCODE_Y) } }
+    fun undo() { currentInputConnection?.let { runCatching { sendCtrlKey(it, KeyEvent.KEYCODE_Z) } } }
+    fun redo() { currentInputConnection?.let { runCatching { sendCtrlKey(it, KeyEvent.KEYCODE_Y) } } }
 
     private fun sendCtrlKey(ic: InputConnection, keyCode: Int) {
         val meta = KeyEvent.META_CTRL_ON
@@ -102,8 +116,10 @@ class CustomKeyboardService : InputMethodService() {
 
     private fun sendKey(keyCode: Int) {
         val ic = currentInputConnection ?: return
-        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        runCatching {
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+        }
     }
 
     fun currentText(): String {

@@ -5,12 +5,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,6 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.superapp.app.features.editor.data.EditorSettingsStore
 import com.superapp.app.features.editor.data.WorkspaceStore
 import com.superapp.app.features.editor.model.OpenDocument
@@ -43,7 +48,7 @@ import com.superapp.app.features.editor.workspace.WorkspaceRepository
 import kotlinx.coroutines.launch
 
 @Composable
-fun EditorRoot() {
+fun EditorRoot(onBack: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val settings = EditorSettingsStore.settings
@@ -54,6 +59,7 @@ fun EditorRoot() {
     var showSettings by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
     var showFind by remember { mutableStateOf(false) }
+    var showFileTree by remember { mutableStateOf(false) }
 
     val openTree = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -118,6 +124,8 @@ fun EditorRoot() {
     Column(
         Modifier
             .fillMaxSize()
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .background(Color(settings.backgroundColor))
     ) {
         // Top bar
@@ -138,6 +146,8 @@ fun EditorRoot() {
 
         EditorQuickToolbar(
             canSave = openDocs.getOrNull(activeIndex)?.isDirty == true,
+            onBack = onBack,
+            onFiles = { showFileTree = true },
             onSave = {
                 val doc = openDocs.getOrNull(activeIndex) ?: return@EditorQuickToolbar
                 scope.launch {
@@ -172,46 +182,80 @@ fun EditorRoot() {
             }
         )
 
-        Row(Modifier.fillMaxSize()) {
-            // File tree
-            Box(Modifier.width(200.dp)) {
-                FileTreePane(
-                    root = rootNode,
-                    onOpenFile = { node ->
-                        scope.launch {
-                            val existing = openDocs.indexOfFirst { it.uri == node.uri }
-                            if (existing >= 0) {
-                                activeIndex = existing
-                            } else {
-                                val doc = WorkspaceRepository.readDocument(
-                                    context, node.uri, node.name, settings.largeFileLimitBytes
-                                )
-                                openDocs.add(doc)
-                                activeIndex = openDocs.lastIndex
-                            }
+        // The editor gets the entire available width. File navigation is opened on demand.
+        Box(Modifier.fillMaxSize()) {
+            val doc = openDocs.getOrNull(activeIndex)
+            if (doc != null) {
+                CodeEditorView(
+                    document = doc,
+                    onContentChange = { text ->
+                        val current = openDocs.getOrNull(activeIndex)
+                        if (current != null && current.uri == doc.uri) {
+                            openDocs[activeIndex] = current.copy(content = text)
                         }
                     }
                 )
-            }
-
-            // Editor
-            Box(Modifier.weight(1f)) {
-                val doc = openDocs.getOrNull(activeIndex)
-                if (doc != null) {
-                    CodeEditorView(
-                        document = doc,
-                        onContentChange = { text ->
-                            openDocs[activeIndex] = doc.copy(content = text)
-                        }
-                    )
-                } else {
+            } else {
+                Column(Modifier.fillMaxSize().padding(24.dp)) {
                     Text(
                         if (rootNode == null) "Open a folder to begin"
-                        else "Select a file from the tree",
+                        else "Select a file from Files",
                         color = Color(settings.lineNumberColor),
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(24.dp)
+                        fontSize = 14.sp
                     )
+                    TextButton(onClick = { showFileTree = true }) {
+                        Text("Browse files", color = Color(settings.accentColor))
+                    }
+                }
+            }
+        }
+    }
+
+    if (showFileTree) {
+        Dialog(
+            onDismissRequest = { showFileTree = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.88f)
+                    .fillMaxHeight(0.92f),
+                color = Color(settings.backgroundColor),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+            ) {
+                Column(Modifier.fillMaxSize().padding(12.dp)) {
+                    Row(Modifier.fillMaxWidth()) {
+                        Text(
+                            "Files",
+                            color = Color(settings.textColor),
+                            modifier = Modifier.weight(1f).padding(12.dp)
+                        )
+                        TextButton(onClick = { showFileTree = false }) { Text("Close") }
+                    }
+                    if (rootNode == null) {
+                        TextButton(onClick = { openTree.launch(null) }) {
+                            Text("Open folder", color = Color(settings.accentColor))
+                        }
+                    } else {
+                        FileTreePane(
+                            root = rootNode,
+                            onOpenFile = { node ->
+                                scope.launch {
+                                    val existing = openDocs.indexOfFirst { it.uri == node.uri }
+                                    if (existing >= 0) {
+                                        activeIndex = existing
+                                    } else {
+                                        val doc = WorkspaceRepository.readDocument(
+                                            context, node.uri, node.name, settings.largeFileLimitBytes
+                                        )
+                                        openDocs.add(doc)
+                                        activeIndex = openDocs.lastIndex
+                                    }
+                                    showFileTree = false
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }

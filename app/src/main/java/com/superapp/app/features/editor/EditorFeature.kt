@@ -15,6 +15,6 @@ class EditorFeature : FeatureModule {
     @Composable
     override fun Content(onBack: () -> Unit) {
         BackHandler(onBack = onBack)
-        EditorRoot()
+        EditorRoot(onBack = onBack)
     }
 }

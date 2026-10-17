@@ -10,6 +10,8 @@ import android.view.inputmethod.InputConnection
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import android.util.Log
+import com.superapp.app.core.debug.DebugLog
 
 /**
  * Custom IME entry point.
@@ -22,25 +24,43 @@ class CustomKeyboardService : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
-        KeyboardSettingsStore.init(this)
-        KeyboardClipboard.init(this)
+        installKeyboardCrashLogging()
+        runCatching {
+            KeyboardSettingsStore.init(this)
+            KeyboardClipboard.init(this)
+        }.onFailure {
+            Log.e("CustomKeyboardService", "Keyboard initialization failed", it)
+            DebugLog.add(this, "KEYBOARD", "Initialization failed", it)
+        }
+    }
+
+    private fun installKeyboardCrashLogging() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            runCatching { DebugLog.add(this, "KEYBOARD_CRASH", "Uncaught exception on ${thread.name}", error) }
+            previous?.uncaughtException(thread, error)
+        }
     }
 
     override fun onCreateInputView(): View {
-        runCatching { KeyboardClipboard.refreshFromSystem(this) }
-        return ComposeView(this).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-            setContent {
-                MaterialTheme {
-                    KeyboardRoot(this@CustomKeyboardService)
+        return try {
+            KeyboardClipboard.refreshFromSystem(this)
+            ComposeView(this).apply {
+                setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+                setContent {
+                    MaterialTheme { KeyboardRoot(this@CustomKeyboardService) }
                 }
             }
+        } catch (error: Throwable) {
+            Log.e("CustomKeyboardService", "Could not create keyboard view", error)
+            DebugLog.add(this, "KEYBOARD", "Could not create keyboard view", error)
+            android.widget.TextView(this).apply { text = "Keyboard failed to load" }
         }
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        runCatching { KeyboardClipboard.refreshFromSystem(this) }
+        KeyboardClipboard.refreshFromSystem(this)
     }
 
     // ------------------------------------------------------------------
@@ -49,56 +69,42 @@ class CustomKeyboardService : InputMethodService() {
 
     fun commitText(text: String) {
         runCatching { currentInputConnection?.commitText(text, 1) }
+            .onFailure { DebugLog.add(this, "KEYBOARD_INPUT", "commitText failed", it) }
     }
 
     fun backspace() {
         val ic = currentInputConnection ?: return
         runCatching {
             val selected = ic.getSelectedText(0)
-            if (!selected.isNullOrEmpty()) {
-                ic.commitText("", 1)
-            } else {
-                // Prefer code-point-aware deletion so surrogate pairs (for example emoji)
-                // are not split. Fall back for editors that do not support this call.
-                val deleted = runCatching { ic.deleteSurroundingTextInCodePoints(1, 0) }
-                    .getOrDefault(false)
-                if (!deleted) ic.deleteSurroundingText(1, 0)
-            }
-        }
+            if (!selected.isNullOrEmpty()) ic.commitText("", 1)
+            else ic.deleteSurroundingText(1, 0)
+        }.onFailure { DebugLog.add(this, "KEYBOARD_INPUT", "backspace failed", it) }
     }
 
     fun sendEnter() {
         val ic = currentInputConnection ?: return
-        runCatching {
-            val info = currentInputEditorInfo
-            val action = info?.imeOptions?.and(EditorInfo.IME_MASK_ACTION) ?: EditorInfo.IME_ACTION_NONE
-            if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
-                if (!ic.performEditorAction(action)) sendEnterKey(ic)
-            } else {
-                sendEnterKey(ic)
-            }
-        }
-    }
-
-    private fun sendEnterKey(ic: InputConnection) {
-        runCatching {
+        val info = currentInputEditorInfo
+        val action = info?.imeOptions?.and(EditorInfo.IME_MASK_ACTION) ?: EditorInfo.IME_ACTION_NONE
+        if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
+            ic.performEditorAction(action)
+        } else {
             ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
             ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
         }
     }
 
-    fun selectAll() { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.selectAll) } }
-    fun copy()      { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.copy) } }
-    fun cut()       { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.cut) } }
-    fun paste()     { runCatching { currentInputConnection?.performContextMenuAction(android.R.id.paste) } }
+    fun selectAll() { currentInputConnection?.performContextMenuAction(android.R.id.selectAll) }
+    fun copy()      { currentInputConnection?.performContextMenuAction(android.R.id.copy) }
+    fun cut()       { currentInputConnection?.performContextMenuAction(android.R.id.cut) }
+    fun paste()     { currentInputConnection?.performContextMenuAction(android.R.id.paste) }
 
     /**
      * Best-effort undo/redo. Android has no public InputConnection undo API,
      * so we dispatch Ctrl+Z / Ctrl+Y KeyEvents. Many editors honour them,
      * some do not. This is documented behaviour, not a fake implementation.
      */
-    fun undo() { currentInputConnection?.let { runCatching { sendCtrlKey(it, KeyEvent.KEYCODE_Z) } } }
-    fun redo() { currentInputConnection?.let { runCatching { sendCtrlKey(it, KeyEvent.KEYCODE_Y) } } }
+    fun undo() { currentInputConnection?.let { sendCtrlKey(it, KeyEvent.KEYCODE_Z) } }
+    fun redo() { currentInputConnection?.let { sendCtrlKey(it, KeyEvent.KEYCODE_Y) } }
 
     private fun sendCtrlKey(ic: InputConnection, keyCode: Int) {
         val meta = KeyEvent.META_CTRL_ON
@@ -116,10 +122,8 @@ class CustomKeyboardService : InputMethodService() {
 
     private fun sendKey(keyCode: Int) {
         val ic = currentInputConnection ?: return
-        runCatching {
-            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-            ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
-        }
+        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
     }
 
     fun currentText(): String {

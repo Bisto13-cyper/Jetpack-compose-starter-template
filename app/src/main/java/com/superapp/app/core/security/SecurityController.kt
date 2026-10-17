@@ -11,6 +11,7 @@ import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.superapp.app.core.debug.DebugLog
 import java.util.concurrent.Executor
 import androidx.core.content.ContextCompat
 
@@ -178,6 +179,12 @@ class SecurityController(
         authenticating = false
         val action = pendingAction
         pendingAction = null
-        if (success) action?.invoke()
+        if (success) {
+            runCatching { action?.invoke() }.onFailure {
+                DebugLog.add(activity, "BIOMETRICS", "Action after authentication failed", it)
+            }
+        } else {
+            DebugLog.add(activity, "BIOMETRICS", "Authentication was cancelled or failed")
+        }
     }
 }

@@ -21,17 +21,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import androidx.fragment.app.FragmentActivity
 import com.superapp.app.core.feature.FeatureRegistry
+import com.superapp.app.core.debug.DebugLog
 import com.superapp.app.core.navigation.Navigator
 import com.superapp.app.core.navigation.Routes
 import com.superapp.app.core.security.SecurityController
@@ -61,6 +60,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        installAppCrashLogging()
         enableEdgeToEdge()
 
         val repository = SettingsRepository(this)
@@ -78,6 +78,15 @@ class MainActivity : FragmentActivity() {
                 securityRepository = securityRepository,
                 securityController = securityController
             )
+        }
+    }
+
+
+    private fun installAppCrashLogging() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, error ->
+            runCatching { DebugLog.add(applicationContext, "APP_CRASH", "Uncaught exception on ${thread.name}", error) }
+            previous?.uncaughtException(thread, error)
         }
     }
 
@@ -99,12 +108,14 @@ fun AppRoot(
     securityRepository: SecurityRepository,
     securityController: SecurityController
 ) {
+    val context = LocalContext.current
     val theme by repository.theme.collectAsState()
     val styles by repository.featureStyles.collectAsState()
     val appLocked by securityController.appLocked.collectAsState()
     val navigator = remember { Navigator() }
 
     fun openRoute(route: String) {
+        DebugLog.add(context, "NAVIGATION", "Requested route: $route")
         val feature = registry.find(route)
         securityController.requestRoute(
             route = route,
@@ -155,12 +166,8 @@ fun AppRoot(
                     else -> {
                         val feature = registry.find(route)
                         if (feature != null) {
-                            if (route == "editor") {
+                            ScreenFrame {
                                 feature.Content(onBack = { navigator.home() })
-                            } else {
-                                ScreenFrame {
-                                    feature.Content(onBack = { navigator.home() })
-                                }
                             }
                         } else {
                             // Unknown route: go home.
@@ -169,17 +176,15 @@ fun AppRoot(
                     }
                 }
 
-                if (navigator.current != "editor") {
-                    SideMenuButton(
-                        features = registry.all(),
-                        currentRoute = navigator.current,
-                        onNavigate = ::openRoute,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .statusBarsPadding()
-                            .padding(top = 8.dp, start = 12.dp)
-                    )
-                }
+                SideMenuButton(
+                    features = registry.all(),
+                    currentRoute = navigator.current,
+                    onNavigate = ::openRoute,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .statusBarsPadding()
+                        .padding(top = 8.dp, start = 12.dp)
+                )
             }
         }
     }
@@ -226,15 +231,11 @@ private fun ScreenFrame(content: @Composable () -> Unit) {
 /** Draws the user's background image faintly behind everything. */
 @Composable
 private fun BackgroundImage(path: String?) {
-    val bitmap by produceState<ImageBitmap?>(initialValue = null, path) {
-        value = if (path.isNullOrBlank()) null else withContext(Dispatchers.IO) {
-            loadScaledBitmap(path)
-        }
-    }
-    val image = bitmap ?: return
+    if (path == null) return
+    val bitmap = remember(path) { loadScaledBitmap(path) } ?: return
 
     Image(
-        bitmap = image,
+        bitmap = bitmap,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         alpha = 0.35f,

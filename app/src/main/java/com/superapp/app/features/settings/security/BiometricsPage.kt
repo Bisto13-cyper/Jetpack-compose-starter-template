@@ -20,11 +20,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.superapp.app.core.settings.SettingsEnv
+import com.superapp.app.core.debug.DebugLog
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun BiometricsPage(env: SettingsEnv) {
+    val context = LocalContext.current
     val settings by env.security.settings.collectAsState()
-    val status = env.securityController.biometricAvailability()
+    val status = remember { runCatching { env.securityController.biometricAvailability() }.getOrElse {
+        DebugLog.add(context, "BIOMETRICS", "Failed to query biometric availability", it)
+        BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE
+    } }
     var message by remember { mutableStateOf<String?>(null) }
 
     val available = status == BiometricManager.BIOMETRIC_SUCCESS
@@ -55,10 +61,11 @@ fun BiometricsPage(env: SettingsEnv) {
                 checked = settings.biometricsEnabled,
                 onCheckedChange = { enabled ->
                     message = null
-                    if (enabled && available) {
-                        env.security.setBiometricsEnabled(true)
-                    } else {
-                        env.security.setBiometricsEnabled(false)
+                    runCatching {
+                        env.security.setBiometricsEnabled(enabled && available)
+                    }.onFailure {
+                        DebugLog.add(context, "BIOMETRICS", "Failed to update biometric setting", it)
+                        message = "Could not update biometrics. Open Debug Console for details."
                     }
                 },
                 enabled = available || settings.biometricsEnabled
@@ -68,11 +75,16 @@ fun BiometricsPage(env: SettingsEnv) {
         Button(
             onClick = {
                 message = null
-                env.securityController.authenticate(
-                    reason = "Test biometric authentication",
-                    biometricOnly = true,
-                    onSuccess = { message = "Authentication successful." }
-                )
+                runCatching {
+                    env.securityController.authenticate(
+                        reason = "Test biometric authentication",
+                        biometricOnly = true,
+                        onSuccess = { message = "Authentication successful." }
+                    )
+                }.onFailure {
+                    DebugLog.add(context, "BIOMETRICS", "Biometric prompt failed to start", it)
+                    message = "Biometric prompt failed. Open Debug Console for details."
+                }
             },
             enabled = available
         ) {

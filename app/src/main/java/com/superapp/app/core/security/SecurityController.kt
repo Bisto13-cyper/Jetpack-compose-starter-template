@@ -142,15 +142,23 @@ class SecurityController(
             .setSubtitle("Authenticate with your device")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val authenticators = if (
+            val canUseDeviceCredential =
                 allowCredentialFallback && deviceCredentialAvailable()
-            ) {
-                BiometricManager.Authenticators.BIOMETRIC_WEAK or
-                    BiometricManager.Authenticators.DEVICE_CREDENTIAL
+
+            if (canUseDeviceCredential) {
+                // DEVICE_CREDENTIAL supplies its own system action; Android does not
+                // allow a custom negative button together with this authenticator.
+                builder.setAllowedAuthenticators(
+                    BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                )
             } else {
-                BiometricManager.Authenticators.BIOMETRIC_WEAK
+                // BIOMETRIC_WEAK alone requires a non-empty negative button label.
+                builder.setAllowedAuthenticators(
+                    BiometricManager.Authenticators.BIOMETRIC_WEAK
+                )
+                builder.setNegativeButtonText("Cancel")
             }
-            builder.setAllowedAuthenticators(authenticators)
         } else {
             builder.setNegativeButtonText("Cancel")
         }

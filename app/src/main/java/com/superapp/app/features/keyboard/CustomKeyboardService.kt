@@ -11,6 +11,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import android.util.Log
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.superapp.app.core.debug.DebugLog
 
 /**
@@ -20,10 +31,29 @@ import com.superapp.app.core.debug.DebugLog
  * All editor interactions are funnelled through the helper methods below so
  * the Compose layer never touches InputConnection directly.
  */
-class CustomKeyboardService : InputMethodService() {
+class CustomKeyboardService :
+    InputMethodService(),
+    LifecycleOwner,
+    ViewModelStoreOwner,
+    SavedStateRegistryOwner {
+
+    // An IME is a plain Service, so it has no lifecycle/saved-state owners.
+    // Compose looks these up from the view tree and crashes with
+    // "ViewTreeLifecycleOwner not found" if they are missing, so we provide them.
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    private val store = ViewModelStore()
+    private val savedStateController = SavedStateRegistryController.create(this)
+
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
+    override val viewModelStore: ViewModelStore get() = store
+    override val savedStateRegistry: SavedStateRegistry
+        get() = savedStateController.savedStateRegistry
 
     override fun onCreate() {
         super.onCreate()
+        savedStateController.performAttach()
+        savedStateController.performRestore(null)
+        lifecycleRegistry.currentState = Lifecycle.State.CREATED
         installKeyboardCrashLogging()
         runCatching {
             KeyboardSettingsStore.init(this)
@@ -45,7 +75,10 @@ class CustomKeyboardService : InputMethodService() {
     override fun onCreateInputView(): View {
         return try {
             KeyboardClipboard.refreshFromSystem(this)
+            attachViewTreeOwners(window?.window?.decorView)
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
             ComposeView(this).apply {
+                attachViewTreeOwners(this)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
                 setContent {
                     MaterialTheme { KeyboardRoot(this@CustomKeyboardService) }
@@ -58,9 +91,33 @@ class CustomKeyboardService : InputMethodService() {
         }
     }
 
+    private fun attachViewTreeOwners(view: View?) {
+        if (view == null) return
+        view.setViewTreeLifecycleOwner(this)
+        view.setViewTreeViewModelStoreOwner(this)
+        view.setViewTreeSavedStateRegistryOwner(this)
+    }
+
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
+        attachViewTreeOwners(window?.window?.decorView)
+        if (lifecycleRegistry.currentState != Lifecycle.State.DESTROYED) {
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        }
         KeyboardClipboard.refreshFromSystem(this)
+    }
+
+    override fun onWindowHidden() {
+        super.onWindowHidden()
+        if (lifecycleRegistry.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            lifecycleRegistry.currentState = Lifecycle.State.CREATED
+        }
+    }
+
+    override fun onDestroy() {
+        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+        store.clear()
+        super.onDestroy()
     }
 
     // ------------------------------------------------------------------

@@ -18,11 +18,11 @@ import com.superapp.app.features.editor.data.EditorSettingsStore
 fun EditorQuickToolbar(
     canSave: Boolean,
     onSave: () -> Unit,
-    onBack: () -> Unit,
-    onFiles: () -> Unit,
     onFind: () -> Unit,
     onSearchWorkspace: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onBack: () -> Unit = {},
+    onFiles: () -> Unit = {}
 ) {
     val s = EditorSettingsStore.settings
     Row(
@@ -32,12 +32,6 @@ fun EditorQuickToolbar(
             .padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        TextButton(onClick = onBack) {
-            Text("←", fontSize = 12.sp, color = Color(s.accentColor))
-        }
-        TextButton(onClick = onFiles) {
-            Text("Files", fontSize = 12.sp, color = Color(s.accentColor))
-        }
         TextButton(onClick = onSave, enabled = canSave) {
             Text("Save", fontSize = 12.sp, color = Color(s.accentColor))
         }
@@ -46,6 +40,12 @@ fun EditorQuickToolbar(
         }
         TextButton(onClick = onSearchWorkspace) {
             Text("Search", fontSize = 12.sp, color = Color(s.textColor))
+        }
+        TextButton(onClick = onFiles) {
+            Text("Files", fontSize = 12.sp, color = Color(s.textColor))
+        }
+        TextButton(onClick = onBack) {
+            Text("Back", fontSize = 12.sp, color = Color(s.textColor))
         }
         TextButton(onClick = onSettings) {
             Text("⚙", fontSize = 12.sp, color = Color(s.textColor))

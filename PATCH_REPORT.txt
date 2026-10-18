@@ -1,0 +1,10 @@
+Editor compile fix
+
+Fixes the three reported Kotlin errors by aligning EditorFeature, EditorRoot, and EditorQuickToolbar callback signatures.
+
+Files:
+- app/src/main/java/com/superapp/app/features/editor/EditorFeature.kt: passes onBack to EditorRoot.
+- app/src/main/java/com/superapp/app/features/editor/EditorRoot.kt: accepts onBack (with a default so EditorActivity remains compatible) and passes onBack/onFiles to EditorQuickToolbar.
+- app/src/main/java/com/superapp/app/features/editor/ui/EditorQuickToolbar.kt: defines and uses the onBack/onFiles callbacks.
+
+No other files are included. This patch has not been built locally.

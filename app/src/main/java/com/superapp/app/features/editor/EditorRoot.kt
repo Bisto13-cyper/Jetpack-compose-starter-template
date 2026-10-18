@@ -43,7 +43,7 @@ import com.superapp.app.features.editor.workspace.WorkspaceRepository
 import kotlinx.coroutines.launch
 
 @Composable
-fun EditorRoot() {
+fun EditorRoot(onBack: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val settings = EditorSettingsStore.settings
@@ -154,7 +154,9 @@ fun EditorRoot() {
             },
             onFind = { showFind = !showFind },
             onSearchWorkspace = { if (rootNode != null) showSearch = true },
-            onSettings = { showSettings = true }
+            onSettings = { showSettings = true },
+            onBack = onBack,
+            onFiles = { showFiles = !showFiles }
         )
 
         if (showFind && openDocs.isNotEmpty()) {

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- الصلاحيات الأساسية -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
@@ -16,12 +15,19 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    
+    <!-- صلاحيات التخزين -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+
+    <!-- مكان وضع queries الصحيح: مباشرة تحت manifest -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
+
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -33,6 +39,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.JetpackStartupTemplate"
         tools:targetApi="31">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -43,20 +50,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <service
             android:name=".features.keyboard.CustomKeyboardService"
             android:exported="true"
             android:label="@string/keyboard_label"
             android:permission="android.permission.BIND_INPUT_METHOD">
-            <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
             <meta-data android:name="android.view.im" android:resource="@xml/keyboard_method" />
         </service>
+
         <activity
             android:name=".features.keyboard.KeyboardSettingsActivity"
             android:exported="false"
             android:label="@string/keyboard_label"
             android:theme="@android:style/Theme.DeviceDefault.Light" />
+
         <receiver android:name=".features.clock.AlarmReceiver" android:exported="false" />
+        
         <receiver android:name=".features.clock.ClockBootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -65,7 +78,12 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
-        <service android:name=".features.clock.AlarmRingService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+
+        <service 
+            android:name=".features.clock.AlarmRingService" 
+            android:exported="false" 
+            android:foregroundServiceType="mediaPlayback" />
+
         <activity
             android:name=".features.clock.AlarmRingActivity"
             android:exported="false"
@@ -75,25 +93,38 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.Material.NoActionBar"
             android:turnScreenOn="true" />
+
         <receiver
             android:name=".features.clock.widget.TimerWidgetProvider"
             android:exported="true"
             android:label="@string/clock_timer_widget_label">
-            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/clock_timer_widget_info" />
         </receiver>
-        <service android:name=".features.clock.widget.TimerWidgetService" android:exported="false" android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <service 
+            android:name=".features.clock.widget.TimerWidgetService" 
+            android:exported="false" 
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <receiver android:name=".features.favorites.widget.FavoritesWidgetProvider" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/favorites_widget_info" />
+        </receiver>
+
         <activity android:name=".features.dashboard.ui.DashboardHostActivity" android:exported="false" android:label="@string/dashboard_feature_title" />
+        
         <activity
             android:name=".features.editor.EditorActivity"
             android:exported="false"
             android:label="@string/editor_feature_title"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
             android:windowSoftInputMode="adjustResize" />
-        <receiver android:name=".features.favorites.widget.FavoritesWidgetProvider" android:exported="true">
-            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/favorites_widget_info" />
-        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files.fileprovider"
@@ -101,11 +132,7 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
-	<queries>
-    		<intent>
-        		<action android:name="android.intent.action.MAIN" />
-        		<category android:name="android.intent.category.LAUNCHER" />
-    		</intent>
-	</queries>
+
     </application>
 </manifest>
+

@@ -116,6 +116,29 @@ class FilesController(private val context: Context) {
 
     fun dispose() { scope.cancel() }
 
+    // ------------------------------------------------ hooks for other features
+
+    /**
+     * Set by whoever hosts the screen. A tap on a FILE calls it first; return true if it took
+     * over (Files Viewer), false to keep the old behaviour (open with an external app).
+     */
+    var fileOpener: ((FileItem, FileSource) -> Boolean)? = null
+
+    /** Current source + folder path, so the screen can come back to the same place later. */
+    fun snapshot(): FilesSnapshot? =
+        if (source.kind == SourceKind.SSH) null else FilesSnapshot(source.id, stack.toList())
+
+    fun restore(s: FilesSnapshot) {
+        val src = sources().firstOrNull { it.id == s.sourceId } ?: return
+        source = src
+        stack.clear()
+        stack.addAll(s.stack)
+        selection = emptySet()
+        searchOpen = false
+        tab = FilesTab.BROWSE
+        load(stack.lastOrNull())
+    }
+
     // ---------------------------------------------------------------- sources
 
     fun sources(): List<FileSource> =
@@ -437,6 +460,7 @@ class FilesController(private val context: Context) {
 
     fun open(item: FileItem, src: FileSource = source) {
         if (item.isDirectory) { openDir(item); return }
+        if (fileOpener?.invoke(item, src) == true) return
         fun view(uri: Uri) = start(Intent(Intent.ACTION_VIEW).setDataAndType(uri, item.mime ?: "*/*")
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
         when (src.kind) {

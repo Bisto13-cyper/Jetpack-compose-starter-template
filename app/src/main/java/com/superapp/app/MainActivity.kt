@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,6 +39,7 @@ import com.superapp.app.core.security.SecurityRepository
 import com.superapp.app.core.settings.SettingsRepository
 import com.superapp.app.core.theme.AppTheme
 import com.superapp.app.core.ui.SideMenuButton
+import com.superapp.app.features.filesviewer.FileOpenRouter
 import com.superapp.app.features.home.HomeScreen
 import com.superapp.app.core.settings.SettingsEnv
 import com.superapp.app.features.settings.SettingsScreen
@@ -122,6 +124,17 @@ fun AppRoot(
             title = feature?.title ?: route
         ) {
             navigator.go(route)
+        }
+    }
+
+    // Lets features open other nodes: Files -> Files Viewer (goes through openRoute, so Node Lock
+    // still applies) and Viewer -> back to Files (direct, you were already inside it).
+    DisposableEffect(navigator) {
+        FileOpenRouter.navigate = { openRoute(it) }
+        FileOpenRouter.goBack = { navigator.go(it) }
+        onDispose {
+            FileOpenRouter.navigate = null
+            FileOpenRouter.goBack = null
         }
     }
 

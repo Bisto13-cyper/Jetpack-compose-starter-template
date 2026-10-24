@@ -22,6 +22,7 @@ import com.superapp.app.features.dashboard.DashboardFeature
 import com.superapp.app.features.editor.EditorFeature
 import com.superapp.app.features.favorites.FavoritesFeature
 import com.superapp.app.features.files.FilesFeature
+import com.superapp.app.features.filesviewer.FilesViewerFeature
 import com.superapp.app.features.keyboard.KeyboardFeature
 import com.superapp.app.features.password.PasswordFeature
 import com.superapp.app.features.webview.WebViewFeature
@@ -38,12 +39,12 @@ val appFeatures: List<FeatureModule> = listOf(
     FilesFeature(),
     FavoritesFeature(),
     ClockFeature(),
-    ComingSoonFeature("markdown", "Markdown", "📝", Color(0xFF2DD4BF)),
+    FilesViewerFeature(),
     KeyboardFeature(),
     PasswordFeature()
 )
 
-/** Placeholder for features intentionally not implemented in this integration pass. */
+/** Placeholder for a future feature that is not built yet. Currently unused; add one line to the list above to use it. */
 class ComingSoonFeature(
     override val id: String,
     override val title: String,

@@ -51,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,7 +77,10 @@ import com.superapp.app.features.files.model.HostCheck
 import com.superapp.app.features.files.model.SourceKind
 import com.superapp.app.features.files.model.formatDate
 import com.superapp.app.features.files.model.formatSize
+import com.superapp.app.features.files.source.FileSource
 import com.superapp.app.features.files.source.LocalFileSource
+import com.superapp.app.features.filesviewer.FileKinds
+import com.superapp.app.features.filesviewer.FileOpenRouter
 import com.superapp.app.features.files.ssh.SshProfile
 import com.superapp.app.features.files.store.FileIconStore
 import com.superapp.app.features.files.store.SortBy
@@ -97,17 +101,35 @@ internal sealed interface FilesDialog {
     class SshEdit(val profile: SshProfile?) : FilesDialog
 }
 
-/** Entry point of the Files feature. Host it from navigation (see integration notes). */
+/**
+ * Entry point of the Files feature. Host it from navigation (see integration notes).
+ *
+ * Normal mode : a tap on a viewable file (json, xml, toml, sh, env, csv, txt...) opens the
+ *               Files Viewer node; any other file opens with an external app as before.
+ * pickMode    : used INSIDE the Files Viewer. A tap on any file calls onPick instead.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FilesScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
+fun FilesScreen(
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    pickMode: Boolean = false,
+    onPick: ((FileItem, FileSource) -> Unit)? = null,
+) {
     val context = LocalContext.current
-    val c = remember { FilesController(context) }
+    val c = remember { FilesController(context).also { FilesLocationMemory.restoreInto(it) } }
+    SideEffect {
+        c.fileOpener = if (pickMode && onPick != null) {
+            { item: FileItem, src: FileSource -> onPick(item, src); true }
+        } else {
+            { item: FileItem, src: FileSource -> FileKinds.isViewable(item) && FileOpenRouter.open(item, src) }
+        }
+    }
     var dialog by remember { mutableStateOf<FilesDialog?>(null) }
     var menu by remember { mutableStateOf(false) }
     var sourceMenu by remember { mutableStateOf(false) }
 
-    DisposableEffect(c) { onDispose { c.dispose() } }
+    DisposableEffect(c) { onDispose { FilesLocationMemory.save(c); c.dispose() } }
     DisposableEffect(context) {
         val owner = context.findActivity() as? LifecycleOwner
         val obs = LifecycleEventObserver { _, e -> if (e == Lifecycle.Event.ON_RESUME) c.onResume() }
@@ -131,7 +153,7 @@ fun FilesScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
             // ---- top bar
             Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { if (!c.back()) onClose() }) { Text("←") }
-                Text("Files", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Text(if (pickMode) "Choose a file" else "Files", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 TextButton(onClick = { if (c.searchOpen) c.closeSearch() else c.openSearch() }) { Text("🔍") }
                 Box {
                     TextButton(onClick = { menu = true }) { Text("⋮") }

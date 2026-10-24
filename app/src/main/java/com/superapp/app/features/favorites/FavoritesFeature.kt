@@ -1,3 +1,16 @@
+package com.superapp.app.features.favorites
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import com.superapp.app.core.feature.FeatureIcon
+import com.superapp.app.core.feature.FeatureModule
+import com.superapp.app.features.favorites.ui.FavoritesScreen
+
 class FavoritesFeature : FeatureModule {
     override val id = "favorites"
     override val title = "Favorites"

@@ -12,7 +12,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.startup.template"
+        applicationId = "com.bisto.app"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

@@ -1,12 +1,3 @@
-package com.superapp.app.features.favorites
-
-import androidx.activity.compose.BackHandler
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import com.superapp.app.core.feature.FeatureIcon
-import com.superapp.app.core.feature.FeatureModule
-import com.superapp.app.features.favorites.ui.FavoritesScreen
-
 class FavoritesFeature : FeatureModule {
     override val id = "favorites"
     override val title = "Favorites"
@@ -15,7 +6,16 @@ class FavoritesFeature : FeatureModule {
 
     @Composable
     override fun Content(onBack: () -> Unit) {
-        BackHandler(onBack = onBack)
-        FavoritesScreen()
+        var currentGroupId by remember { mutableStateOf<String?>(null) }
+
+        BackHandler {
+            if (currentGroupId != null) currentGroupId = null
+            else onBack()
+        }
+
+        FavoritesScreen(
+            parentId = currentGroupId,
+            onOpenGroup = { groupId -> currentGroupId = groupId }
+        )
     }
 }
